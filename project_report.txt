@@ -1,0 +1,46 @@
+**Heart Sound Classification Project: Detailed Report**
+
+**1. Introduction**
+
+This report provides a comprehensive overview of the Heart Sound Classification project. The primary objective is to develop a machine learning model capable of distinguishing between healthy and unhealthy heart sounds from audio recordings. The project is structured into two main phases: Exploratory Data Analysis (EDA) and Model Building, each implemented in a separate Jupyter notebook.
+
+**2. Exploratory Data Analysis (EDA)**
+
+The EDA phase was crucial for understanding the dataset and preparing it for modeling. The key activities included:
+
+*   **Data Sourcing**: The dataset was obtained from Kaggle and contains audio files (`.wav`) of heart sounds.
+*   **Initial Analysis**:
+    *   **Duration and Sampling Rate**: We analyzed the length and quality of the audio files. Most files had a consistent sampling rate, but durations varied.
+    *   **Signal-to-Noise Ratio (SNR)**: To ensure data quality, we calculated the SNR for each file and filtered out recordings with high levels of noise. This step is vital for building a reliable model.
+*   **Data Visualization**:
+    *   **Waveforms**: Plotted to visualize the amplitude of heart sounds over time, revealing the characteristic "lub-dub" patterns.
+    *   **Spectrograms and FFT**: Used to analyze the frequency components of the sounds, which helped in identifying distinguishing features between healthy and unhealthy samples.
+*   **Preprocessing**:
+    *   **Audio Chunking**: To create a uniform input for our model, we segmented the audio files into 5-second chunks using a sliding window. This also served as a data augmentation technique, increasing the number of training samples.
+*   **Output**: The processed audio chunks were saved as NumPy arrays (`.npy` files), ready for the model-building phase.
+
+**3. Model Building**
+
+This phase focused on creating and evaluating a machine learning classifier. The steps were as follows:
+
+*   **Feature Extraction**:
+    *   We used **Mel-Frequency Cepstral Coefficients (MFCCs)** as the primary features. MFCCs are a standard in audio processing and are effective at capturing the unique characteristics of a sound. We extracted the mean and standard deviation of MFCCs from each audio chunk to form a fixed-size feature vector.
+*   **Handling Class Imbalance**:
+    *   The dataset was imbalanced, with more samples in one class than the other. To prevent the model from being biased, we experimented with:
+        *   **Class Weighting**: Assigning a higher penalty for misclassifying the minority class.
+        *   **SMOTE (Oversampling)**: Synthetically generating new samples for the minority class.
+        *   **Random Undersampling**: Reducing the number of samples in the majority class.
+*   **Model Selection and Training**:
+    *   We trained and compared three different models:
+        1.  **Logistic Regression**: A baseline model for binary classification.
+        2.  **Random Forest**: An ensemble model known for its robustness.
+        3.  **XGBoost**: A gradient boosting model that often achieves state-of-the-art performance.
+*   **Evaluation and Results**:
+    *   The models were evaluated on a held-out test set using metrics such as accuracy, precision, recall, and F1-score.
+    *   The **XGBoost classifier** demonstrated the best performance, achieving a high F1-score for both classes, indicating its effectiveness in correctly identifying both healthy and unhealthy heart sounds.
+*   **Deployment Artifacts**:
+    *   The trained XGBoost model and the feature scaler were saved as `.pkl` files for future use in a prediction pipeline.
+
+**4. Conclusion**
+
+This project successfully developed a machine learning pipeline for classifying heart sounds. The EDA provided valuable insights into the data, and the final XGBoost model proved to be an effective classifier. Future work could involve experimenting with more advanced deep learning models (like CNNs or LSTMs) and deploying the model in a real-time application.
