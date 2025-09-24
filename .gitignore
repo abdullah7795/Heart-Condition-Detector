@@ -7,3 +7,9 @@ venv/
 
 # Python Cache
 __pycache__/
+
+*.npy
+*.npz
+*.wav
+*.pkl
+*.npy
