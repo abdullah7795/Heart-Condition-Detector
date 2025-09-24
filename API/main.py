@@ -1,25 +1,52 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile, HTTPException
+from pydantic import BaseModel
 import librosa
 import numpy as np
 import joblib
 from collections import Counter
 import io
 
-app = FastAPI()
+# Metadata for the API
+description = """
+This API classifies heart sounds as **Healthy** or **Unhealthy** using an XGBoost model.
+
+## How to Use
+
+1.  Upload a `.wav` audio file of a heart sound.
+2.  The API will process the audio, make a prediction, and return the classification.
+"""
+
+app = FastAPI(
+    title="Heart Sound Classification API",
+    description=description,
+    version="1.0.0",
+)
+
+# Define the response model
+class PredictionResponse(BaseModel):
+    prediction: str
 
 # Paths
 model_path = "xgboost_heart_sound_model.pkl"
 scaler_path = "scaler_heart_sound.pkl"
 
 # Load model and scaler
-clf_xgb = joblib.load(model_path)
-scaler = joblib.load(scaler_path)
+try:
+    clf_xgb = joblib.load(model_path)
+    scaler = joblib.load(scaler_path)
+except FileNotFoundError:
+    raise RuntimeError("Model or scaler not found. Make sure to train the model first.")
 
 # Since model was trained on 5s chunks, split the audio into 5s overlapping windows
 def sliding_window_chunks(y, sr, window_sec=5, stride_sec=1):
     window_size = int(window_sec * sr)
     stride_size = int(stride_sec * sr)
     chunks = []
+    if len(y) < window_size:
+        # Pad the audio if it's shorter than the window size
+        padding = window_size - len(y)
+        y = np.pad(y, (0, padding), 'constant')
+    
     for start in range(0, len(y) - window_size + 1, stride_size):
         chunk = y[start:start+window_size]
         chunks.append(chunk)
@@ -36,13 +63,25 @@ def extract_features(audio_chunks, sr, n_mfcc=13):
         features.append(feature_vector)
     return np.array(features)
 
-@app.post("/predict/")
-async def predict(file: UploadFile = File(...)):
+@app.post("/predict/", 
+          response_model=PredictionResponse,
+          summary="Classify a heart sound",
+          description="Upload a `.wav` audio file to classify it as Healthy or Unhealthy.")
+async def predict(file: UploadFile = File(..., description="Heart sound audio file (.wav)")):
+    # Verify file type
+    if not file.filename.endswith(".wav"):
+        raise HTTPException(status_code=400, detail="Invalid file type. Please upload a .wav file.")
+
     # Load audio
-    audio_bytes = await file.read()
-    y, sr = librosa.load(io.BytesIO(audio_bytes), sr=None)
+    try:
+        audio_bytes = await file.read()
+        y, sr = librosa.load(io.BytesIO(audio_bytes), sr=None)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Could not process audio file: {e}")
 
     chunks = sliding_window_chunks(y, sr, window_sec=5, stride_sec=1)
+    if not chunks:
+        raise HTTPException(status_code=400, detail="Audio file is too short to be processed.")
 
     X_new = extract_features(chunks, sr)
 

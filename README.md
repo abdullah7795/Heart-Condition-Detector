@@ -13,6 +13,7 @@ Heart-Condition-Detector/
 │   ├── requirement.txt
 │   └── ... (other files)
 ├── API/
+│   ├── Dockerfile
 │   ├── main.py
 │   ├── requirements.txt
 │   └── ... (other files)
@@ -69,3 +70,22 @@ The `API/` directory contains the code for deploying the trained model as a REST
     uvicorn API.main:app --reload --port 8001
     ```
     You can access the API documentation at `http://127.0.0.1:8001/docs`.
+
+### Running the API with Docker
+
+1.  **Navigate to the `API` directory**:
+    ```bash
+    cd API
+    ```
+
+2.  **Build the Docker image**:
+    ```bash
+    sudo docker build -t heart-sound-api .
+    ```
+
+3.  **Run the Docker container**:
+    ```bash
+    sudo docker run -p 8031:80 heart-sound-api
+    ```
+    The API will be accessible at `http://127.0.0.1:8031/docs`.
+>>>>>>> main
